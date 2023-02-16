@@ -1,0 +1,106 @@
+use std::cell::Cell;
+
+use crate::traits::{Fitness, Individual};
+
+#[derive(Clone)]
+pub struct LazyWrapper<T: Individual> {
+    individual: T,
+    fitness: Cell<Option<f64>>,
+}
+
+impl<T> LazyWrapper<T>
+where
+    T: Individual,
+{
+    pub fn new(individual: T) -> Self {
+        LazyWrapper {
+            individual,
+            fitness: Cell::new(None),
+        }
+    }
+
+    pub fn into_inner(self) -> T {
+        self.individual
+    }
+}
+
+impl<T> Individual for LazyWrapper<T>
+where
+    T: Individual,
+{
+    type Fitness = f64;
+
+    fn generate() -> Self {
+        LazyWrapper {
+            individual: T::generate(),
+            fitness: Cell::new(None),
+        }
+    }
+
+    fn evaluate(&self) -> Self::Fitness {
+        if let Some(fitness) = self.fitness.get() {
+            fitness
+        } else {
+            let new_fitness = self.individual.evaluate().collapse();
+            self.fitness.set(Some(new_fitness));
+            new_fitness
+        }
+    }
+
+    fn crossover(a: &mut Self, b: &mut Self) {
+        T::crossover(&mut a.individual, &mut b.individual);
+        a.invalidate();
+        b.invalidate();
+    }
+
+    fn mutate(&mut self) {
+        self.individual.mutate();
+        self.invalidate();
+    }
+}
+
+impl<T> LazyWrapper<T> where T: Individual {
+    fn invalidate(&self) {
+        self.fitness.set(None);
+    }
+}
+
+unsafe impl<T> Sync for LazyWrapper<T> where T: Individual {}
+
+pub trait IterIndices {
+    type Item;
+    fn iter_indices<I>(&self, indices: I) -> IndicesIter<Self::Item, I>
+    where
+        I: Iterator<Item = usize>;
+}
+
+impl<T> IterIndices for Vec<T> {
+    type Item = T;
+    fn iter_indices<I>(&self, indices: I) -> IndicesIter<Self::Item, I>
+    where
+        I: Iterator<Item = usize>,
+    {
+        IndicesIter {
+            inner: self,
+            indices,
+        }
+    }
+}
+
+pub struct IndicesIter<'a, T, I>
+where
+    I: Iterator<Item = usize>,
+{
+    inner: &'a [T],
+    indices: I,
+}
+
+impl<'a, T, I> Iterator for IndicesIter<'a, T, I>
+where
+    I: Iterator<Item = usize>,
+{
+    type Item = &'a T;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.indices.next().map(|idx| &self.inner[idx])
+    }
+}
