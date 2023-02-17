@@ -1,8 +1,8 @@
 use rand::seq::index::sample;
-use rand::thread_rng;
 
 use crate::pop::{Population, Visitor};
 use crate::{Fitness, Individual};
+use crate::repro_thread_rng::thread_rng;
 
 pub trait Select<T: Individual> {
     fn select(&self, n: usize, population: &mut Vec<T>);
@@ -66,7 +66,7 @@ where
     }
 }
 
-pub fn find_best<T>(pop: &Vec<T>) -> &T where T: Individual {
+pub fn find_best<T>(pop: &[T]) -> &T where T: Individual {
     let mut best_idx: usize = 0;
     for i in 1..pop.len() {
         if pop[i].collapsed() > pop[best_idx].collapsed() {

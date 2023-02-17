@@ -4,9 +4,9 @@ use std::fmt::Display;
 use num::{rational::Ratio, Rational32};
 use num::traits::ToPrimitive;
 
-use rand::{random, thread_rng, Rng};
+use rand::{Rng};
 
-use sear::{select::Tournament, Individual, alg};
+use eviolite::{select::{Tournament, find_best}, Individual, alg, repro_thread_rng::thread_rng};
 
 const TARGET: f64 = std::f64::consts::PI;
 
@@ -60,7 +60,11 @@ impl Display for Fraction {
 fn main() {
     let selector = Tournament::new(3);
 
-    let best: Vec<Fraction> = alg::simple(1000, selector, 0.5, 0.5, 1000);
+    let finalpop: Vec<Fraction> = alg::simple(1000, selector, 0.5, 0.5, 1000);
+
+    let best = find_best(&finalpop);
+
+    println!("{} = {}", best, best.0.to_f64().unwrap());
 }
 
 fn minmax<T>(a: T, b: T) -> (T, T) where T: Ord {

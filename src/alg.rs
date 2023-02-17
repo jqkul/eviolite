@@ -1,7 +1,7 @@
-use rand::{thread_rng, Rng};
+use rand::Rng;
 use rayon::prelude::*;
 
-use crate::{select::{Select, find_best}, Individual, utils::LazyWrapper, pop};
+use crate::{select::{Select, find_best}, Individual, utils::LazyWrapper, repro_thread_rng::thread_rng};
 
 pub fn simple<T>(
     initial_pop_size: usize,
@@ -23,12 +23,6 @@ where
         // LazyWrapper will automatically cache the result, so intensive
         // computation can only happen once per distinct individual.
         population.par_iter().for_each(|lw| {lw.evaluate();});
-
-        #[cfg(debug_assertions)] {
-            let avg: f64 = population.iter().map(|ind| ind.evaluate()).sum();
-            let best = population.iter().map(|ind| ind.evaluate()).max_by(|a, b| a.total_cmp(b)).unwrap();
-            println!("generation {}: average fitness = {}; best fitness of gen = {}", n, avg, best);
-        }
         selector.select(population.len(), &mut population);
         var_and(&mut population, cxpb, mutpb);
     }
