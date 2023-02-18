@@ -1,4 +1,4 @@
-pub trait Individual: Clone + Sync {
+pub trait Solution: Clone + Sync {
     type Fitness: Fitness;
     fn generate() -> Self;
     fn evaluate(&self) -> Self::Fitness;

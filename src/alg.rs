@@ -1,7 +1,7 @@
 use rand::Rng;
 use rayon::prelude::*;
 
-use crate::{select::{Select, find_best}, Individual, utils::LazyWrapper, repro_thread_rng::thread_rng};
+use crate::{select::Select, Solution, utils::LazyWrapper, repro_thread_rng::thread_rng};
 
 pub fn simple<T>(
     initial_pop_size: usize,
@@ -11,7 +11,7 @@ pub fn simple<T>(
     n_generations: usize,
 ) -> Vec<T>
 where
-    T: Individual,
+    T: Solution,
 {
     let mut population: Vec<LazyWrapper<T>> = Vec::with_capacity(initial_pop_size);
     for _ in 0..initial_pop_size {
@@ -22,15 +22,19 @@ where
         // Evaluate all unevaluated individuals.
         // LazyWrapper will automatically cache the result, so intensive
         // computation can only happen once per distinct individual.
-        population.par_iter().for_each(|lw| {lw.evaluate();});
+        population.par_iter().for_each(|lw| {
+            lw.evaluate();
+        });
+
         selector.select(population.len(), &mut population);
+
         var_and(&mut population, cxpb, mutpb);
     }
 
     population.into_iter().map(|lw| lw.into_inner()).collect()
 }
 
-pub fn var_and<T>(population: &mut Vec<T>, cxpb: f64, mutpb: f64) where T: Individual {
+pub fn var_and<T>(population: &mut [T], cxpb: f64, mutpb: f64) where T: Solution {
     let mut rng = thread_rng();
     for i in 1..population.len() {
         if rng.gen_bool(cxpb) {

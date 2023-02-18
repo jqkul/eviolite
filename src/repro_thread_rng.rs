@@ -8,8 +8,10 @@ use rand::distributions::Standard;
 use rand::prelude::Distribution;
 use rand::{SeedableRng, RngCore};
 use rand::rngs::OsRng;
-use rand::Rng;
+pub use rand::Rng;
 use rand_xoshiro::Xoshiro256StarStar;
+
+const SEED_ENV_VAR_NAME: &str = "EVIOLITE_SEED";
 
 pub struct ReproThreadRng {
     rng: Rc<UnsafeCell<Xoshiro256StarStar>>
@@ -17,11 +19,11 @@ pub struct ReproThreadRng {
 
 thread_local! {
     static THREAD_RNG_KEY: Rc<UnsafeCell<Xoshiro256StarStar>> = {
-        let seed: u64 = match std::env::var("MENDEL_SEED").map(|s| s.parse::<u64>()) {
+        let seed: u64 = match std::env::var(SEED_ENV_VAR_NAME).map(|s| s.parse::<u64>()) {
             Ok(Ok(seed)) => seed,
             _ => {
                 let seed = OsRng.next_u64();
-                eprintln!("mendel: unable to read preset RNG seed from environment variable MENDEL_SEED\nmendel: using OS-generated seed {}", seed);
+                eprintln!("eviolite: unable to read preset RNG seed from environment variable {}\neviolite: using OS-generated seed {}", SEED_ENV_VAR_NAME, seed);
                 seed
             }
         };

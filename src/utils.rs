@@ -1,16 +1,16 @@
 use std::cell::Cell;
 
-use crate::traits::{Fitness, Individual};
+use crate::traits::{Fitness, Solution};
 
 #[derive(Clone)]
-pub struct LazyWrapper<T: Individual> {
+pub struct LazyWrapper<T: Solution> {
     individual: T,
-    fitness: Cell<Option<f64>>,
+    fitness: Cell<Option<T::Fitness>>,
 }
 
 impl<T> LazyWrapper<T>
 where
-    T: Individual,
+    T: Solution,
 {
     pub fn new(individual: T) -> Self {
         LazyWrapper {
@@ -24,11 +24,11 @@ where
     }
 }
 
-impl<T> Individual for LazyWrapper<T>
+impl<T> Solution for LazyWrapper<T>
 where
-    T: Individual,
+    T: Solution,
 {
-    type Fitness = f64;
+    type Fitness = T::Fitness;
 
     fn generate() -> Self {
         LazyWrapper {
@@ -41,7 +41,7 @@ where
         if let Some(fitness) = self.fitness.get() {
             fitness
         } else {
-            let new_fitness = self.individual.evaluate().collapse();
+            let new_fitness = self.individual.evaluate();
             self.fitness.set(Some(new_fitness));
             new_fitness
         }
@@ -59,13 +59,13 @@ where
     }
 }
 
-impl<T> LazyWrapper<T> where T: Individual {
+impl<T> LazyWrapper<T> where T: Solution {
     fn invalidate(&self) {
         self.fitness.set(None);
     }
 }
 
-unsafe impl<T> Sync for LazyWrapper<T> where T: Individual {}
+unsafe impl<T> Sync for LazyWrapper<T> where T: Solution {}
 
 pub trait IterIndices {
     type Item;
@@ -102,5 +102,19 @@ where
     type Item = &'a T;
     fn next(&mut self) -> Option<Self::Item> {
         self.indices.next().map(|idx| &self.inner[idx])
+    }
+}
+
+pub trait NFromFunction<T> {
+    fn n_from_function(n: usize, f: impl Fn() -> T) -> Self;
+}
+
+impl<T> NFromFunction<T> for Vec<T> {
+    fn n_from_function(n: usize, f: impl Fn() -> T) -> Self {
+        let mut v = Vec::with_capacity(n);
+        for _ in 0..n {
+            v.push(f());
+        }
+        v
     }
 }

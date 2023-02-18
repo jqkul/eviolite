@@ -4,7 +4,7 @@ pub mod pop;
 pub mod select;
 pub mod repro_thread_rng;
 mod traits;
-pub use traits::{Fitness, Individual};
+pub use traits::{Fitness, Solution};
 
 mod utils;
 

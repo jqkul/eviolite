@@ -1,19 +1,18 @@
-use std::cmp::min;
-use std::fmt::Display;
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use num::{rational::Ratio, Rational32};
+use num::Rational32;
 use num::traits::ToPrimitive;
 
 use rand::{Rng};
 
-use eviolite::{select::{Tournament, find_best}, Individual, alg, repro_thread_rng::thread_rng};
+use eviolite::{select::Tournament, Solution, alg, repro_thread_rng::thread_rng};
 
 const TARGET: f64 = std::f64::consts::PI;
 
 #[derive(Clone, Debug)]
 struct Fraction(Rational32);
 
-impl Individual for Fraction {
+impl Solution for Fraction {
     type Fitness = f64;
 
     fn generate() -> Self {
@@ -50,23 +49,6 @@ impl Individual for Fraction {
     }
 }
 
-impl Display for Fraction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}/{}", self.0.numer(), self.0.denom())
-    }
-}
-
-#[test]
-fn main() {
-    let selector = Tournament::new(3);
-
-    let finalpop: Vec<Fraction> = alg::simple(1000, selector, 0.5, 0.5, 1000);
-
-    let best = find_best(&finalpop);
-
-    println!("{} = {}", best, best.0.to_f64().unwrap());
-}
-
 fn minmax<T>(a: T, b: T) -> (T, T) where T: Ord {
     if b < a {
         (b, a)
@@ -74,3 +56,23 @@ fn minmax<T>(a: T, b: T) -> (T, T) where T: Ord {
         (a, b)
     }
 }
+
+pub fn bench_pi_frac(c: &mut Criterion) {
+    let selector = Tournament::new(3);
+
+    c.bench_function("pi_frac 1k 1k", 
+        |b| b.iter_with_large_drop(|| {
+            let finalpop: Vec<Fraction> = alg::simple(1000, selector, 0.5, 0.5, 1000);
+            finalpop
+        })
+    );
+}
+
+criterion_group! {
+    name = grp_pi_frac;
+    config = {
+        Criterion::default().sample_size(10)
+    };
+    targets = bench_pi_frac
+}
+criterion_main!(grp_pi_frac);
