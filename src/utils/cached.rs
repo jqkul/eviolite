@@ -4,19 +4,19 @@ use crate::{
     traits::{Fitness, Solution}, fitness::MultiObjective,
 };
 
-pub struct Cache<T: Solution> {
+pub struct Cached<T: Solution> {
     individual: T,
     fitness: UnsafeCell<Option<T::Fitness>>,
 }
 
-impl<T> Solution for Cache<T>
+impl<T> Solution for Cached<T>
 where
     T: Solution,
 {
     type Fitness = T::Fitness;
 
     fn generate() -> Self {
-        Cache {
+        Cached {
             individual: T::generate(),
             fitness: UnsafeCell::new(None),
         }
@@ -36,29 +36,29 @@ where
 
     fn crossover(a: &mut Self, b: &mut Self) {
         T::crossover(&mut a.individual, &mut b.individual);
-        Cache::invalidate(a);
-        Cache::invalidate(b);
+        Cached::invalidate(a);
+        Cached::invalidate(b);
     }
 
     fn mutate(&mut self) {
         self.individual.mutate();
-        Cache::invalidate(self);
+        Cached::invalidate(self);
     }
 }
 
-impl<T> Clone for Cache<T>
+impl<T> Clone for Cached<T>
 where
     T: Solution,
 {
     fn clone(&self) -> Self {
-        Cache {
+        Cached {
             individual: self.individual.clone(),
             fitness: UnsafeCell::new(unsafe { *self.fitness.get() }),
         }
     }
 }
 
-impl<T> AsRef<T> for Cache<T>
+impl<T> AsRef<T> for Cached<T>
 where
     T: Solution,
 {
@@ -67,14 +67,14 @@ where
     }
 }
 
-unsafe impl<T> Sync for Cache<T> where T: Solution {}
+unsafe impl<T> Sync for Cached<T> where T: Solution {}
 
-impl<T> Cache<T>
+impl<T> Cached<T>
 where
     T: Solution,
 {
     pub fn new(individual: T) -> Self {
-        Cache {
+        Cached {
             individual,
             fitness: UnsafeCell::new(None),
         }
@@ -85,7 +85,7 @@ where
     }
 }
 
-impl<T, const M: usize> Cache<T>
+impl<T, const M: usize> Cached<T>
 where
     T: Solution<Fitness = MultiObjective<M>>,
 {
@@ -94,7 +94,7 @@ where
     }
 }
 
-impl<T> Cache<T>
+impl<T> Cached<T>
 where
     T: Solution,
 {

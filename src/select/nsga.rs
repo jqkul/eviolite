@@ -5,7 +5,7 @@ use std::{ops::Mul, path::Path};
 
 use rayon::slice::ParallelSliceMut;
 
-use crate::Cache;
+use crate::Cached;
 use crate::fitness::MultiObjective;
 use crate::{
     Fitness,
@@ -19,7 +19,7 @@ impl<T, const M: usize> Select<T> for NSGA2
 where
     T: Solution<Fitness = MultiObjective<M>>,
 {
-    fn select(&self, n: usize, pop: &mut Vec<Cache<T>>) {
+    fn select(&self, n: usize, pop: &mut Vec<Cached<T>>) {
         debug_assert!(n <= pop.len());
 
         let pareto = rank_nondominated(pop);
@@ -142,11 +142,11 @@ where
     pareto
 }
 
-fn sort_by_crowding_distance<T, const M: usize>(front: &mut [usize], pop: &[Cache<T>])
+fn sort_by_crowding_distance<T, const M: usize>(front: &mut [usize], pop: &[Cached<T>])
 where
     T: Solution<Fitness = MultiObjective<M>>,
 {
-    let fit = |idx: usize, m: usize| Cache::fit(&pop[idx], m);
+    let fit = |idx: usize, m: usize| Cached::fit(&pop[idx], m);
 
     let frontsize = front.len();
     let mut distances: Vec<f64> = vec![0.0; frontsize];

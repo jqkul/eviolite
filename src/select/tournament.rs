@@ -5,7 +5,7 @@ use rand::seq::index::sample;
 
 use crate::repro_thread_rng::thread_rng;
 use crate::select::{utils::*, Select};
-use crate::{Cache, Solution};
+use crate::{Cached, Solution};
 
 #[derive(Clone, Copy)]
 pub struct Tournament {
@@ -27,7 +27,7 @@ impl<T> Select<T> for Tournament
 where
     T: Solution,
 {
-    fn select(&self, n_rounds: usize, pop: &mut Vec<Cache<T>>) {
+    fn select(&self, n_rounds: usize, pop: &mut Vec<Cached<T>>) {
         let mut rng = thread_rng();
         let len = pop.len();
         let mut winners: Vec<usize> = Vec::with_capacity(n_rounds);

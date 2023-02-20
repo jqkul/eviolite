@@ -1,5 +1,5 @@
-mod cache;
-pub use cache::Cache;
+mod cached;
+pub use cached::Cached;
 
 pub trait IterIndices {
     type Item;

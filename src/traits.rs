@@ -1,6 +1,6 @@
 use crate::{select::Select, fitness::MultiObjective};
 
-use super::Cache;
+use super::Cached;
 
 pub trait Solution: Clone + Sync {
     type Fitness: Fitness;
@@ -25,6 +25,6 @@ impl Fitness for f64 {
 }
 
 pub trait Algorithm {
-    fn step<T, const M: usize>(&self, population: &mut Vec<Cache<T>>, selector: &impl Select<T>, logger: impl FnMut(&[Cache<T>])) where T: Solution;
+    fn step<T, const M: usize>(&self, population: &mut Vec<Cached<T>>, selector: &impl Select<T>, logger: impl FnMut(&[Cached<T>])) where T: Solution;
     fn pop_size(&self) -> usize;
 }

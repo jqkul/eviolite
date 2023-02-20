@@ -1,11 +1,11 @@
-use crate::{fitness::MultiObjective, utils::Cache, Solution};
+use crate::{fitness::MultiObjective, utils::Cached, Solution};
 
 pub trait GenerationStats<T: Solution> {
-    fn analyze(generation: &[Cache<T>]) -> Self;
+    fn analyze(generation: &[Cached<T>]) -> Self;
 }
 
 impl<T> GenerationStats<T> for () where T: Solution {
-    fn analyze(generation: &[Cache<T>]) -> Self {
+    fn analyze(generation: &[Cached<T>]) -> Self {
         ()
     }
 }
@@ -32,17 +32,17 @@ impl<const M: usize> FitnessBasicMulti<M> {
 
 impl<T, const M: usize> GenerationStats<T> for FitnessBasicMulti<M> where T: Solution<Fitness = MultiObjective<M>>
 {
-    fn analyze(generation: &[Cache<T>]) -> Self {
+    fn analyze(generation: &[Cached<T>]) -> Self {
         let len = generation.len() as f64;
         let mut mean = [0.0f64; M];
         let mut variance = [0.0f64; M];
         let mut stdev = [0.0f64; M];
 
         for m in 0..M {
-            mean[m] = generation.iter().map(|ind| Cache::fit(ind, m)).sum::<f64>() / len;
+            mean[m] = generation.iter().map(|ind| Cached::fit(ind, m)).sum::<f64>() / len;
             variance[m] = generation
                 .iter()
-                .map(|ind| (Cache::fit(ind, m) - mean[m]).powi(2))
+                .map(|ind| (Cached::fit(ind, m) - mean[m]).powi(2))
                 .sum::<f64>()
                 / len;
             stdev[m] = variance[m].sqrt();

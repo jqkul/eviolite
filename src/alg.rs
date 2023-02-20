@@ -5,7 +5,7 @@ use crate::{
     fitness::MultiObjective,
     repro_thread_rng::thread_rng,
     select::{rank_nondominated, Select, NSGA2},
-    utils::Cache, Solution
+    utils::Cached, Solution
 };
 
 pub fn simple<T>(
@@ -221,23 +221,23 @@ where
     }
 }
 
-fn gen_pop<T>(size: usize) -> Vec<Cache<T>>
+fn gen_pop<T>(size: usize) -> Vec<Cached<T>>
 where
     T: Solution,
 {
     let mut pop = Vec::with_capacity(size);
     for _ in 0..size {
-        pop.push(Cache::generate())
+        pop.push(Cached::generate())
     }
     pop
 }
 
-fn decache<T>(wrapped: impl IntoIterator<Item = Cache<T>>) -> Vec<T>
+fn decache<T>(wrapped: impl IntoIterator<Item = Cached<T>>) -> Vec<T>
 where
     T: Solution,
 {
     wrapped
         .into_iter()
-        .map(|lw| Cache::into_inner(lw).0)
+        .map(|lw| Cached::into_inner(lw).0)
         .collect()
 }

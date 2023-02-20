@@ -8,6 +8,7 @@ description = "A platform for working with evolutionary algorithms"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+itertools = "0.10.5"
 rand = "0.8.5"
 rand_xoshiro = "0.6.0"
 rayon = "1.6.1"
