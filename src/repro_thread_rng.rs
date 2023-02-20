@@ -1,20 +1,19 @@
+use std::cell::UnsafeCell;
 /// This file is a re-implementation of the `thread_rng` implementation from `rand`,
 /// but specialized to avoid re-seeding and enable a single seed applied through the whole program.
-
 use std::rc::Rc;
-use std::cell::UnsafeCell;
 
 use rand::distributions::Standard;
 use rand::prelude::Distribution;
-use rand::{SeedableRng, RngCore};
 use rand::rngs::OsRng;
 pub use rand::Rng;
+use rand::{RngCore, SeedableRng};
 use rand_xoshiro::Xoshiro256StarStar;
 
 const SEED_ENV_VAR_NAME: &str = "EVIOLITE_SEED";
 
 pub struct ReproThreadRng {
-    rng: Rc<UnsafeCell<Xoshiro256StarStar>>
+    rng: Rc<UnsafeCell<Xoshiro256StarStar>>,
 }
 
 thread_local! {
@@ -34,7 +33,10 @@ thread_local! {
     }
 }
 
-pub fn random<T>() -> T where Standard: Distribution<T> {
+pub fn random<T>() -> T
+where
+    Standard: Distribution<T>,
+{
     thread_rng().gen()
 }
 

@@ -1,9 +1,11 @@
+use std::cmp::Ordering;
+use std::marker::PhantomData;
+
 use rand::seq::index::sample;
 
-use crate::pop::{Population, Visitor};
-use crate::{Fitness, Solution};
 use crate::repro_thread_rng::thread_rng;
-use crate::select::{Select, utils::*};
+use crate::select::{utils::*, Select};
+use crate::{Cache, Solution};
 
 #[derive(Clone, Copy)]
 pub struct Tournament {
@@ -17,9 +19,7 @@ impl Tournament {
         if round_size == 0 {
             panic!("Tournament needs at least one participant per round");
         }
-        Tournament {
-            round_size,
-        }
+        Tournament { round_size }
     }
 }
 
@@ -27,9 +27,9 @@ impl<T> Select<T> for Tournament
 where
     T: Solution,
 {
-    fn select(&self, n_rounds: usize, population: &mut Vec<T>) {
+    fn select(&self, n_rounds: usize, pop: &mut Vec<Cache<T>>) {
         let mut rng = thread_rng();
-        let len = population.len();
+        let len = pop.len();
         let mut winners: Vec<usize> = Vec::with_capacity(n_rounds);
 
         // Run `n_rounds` rounds. Each round does the following:
@@ -41,7 +41,7 @@ where
                 let mut participants = sample(&mut rng, len, self.round_size).into_iter();
                 let mut curr_max = participants.next().unwrap();
                 for idx in participants {
-                    if population[idx].collapsed() > population[curr_max].collapsed() {
+                    if pop[idx].collapsed() > pop[curr_max].collapsed() {
                         curr_max = idx;
                     }
                 }
@@ -50,6 +50,6 @@ where
         }
 
         // Delete every individual that didn't win a tournament
-        retain_indices(population, winners);
+        retain_indices(pop, winners);
     }
 }

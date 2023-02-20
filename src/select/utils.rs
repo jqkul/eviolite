@@ -1,6 +1,9 @@
 use crate::Solution;
 
-pub fn find_best<T>(pop: &[T]) -> &T where T: Solution {
+pub fn find_best<T>(pop: &[T]) -> &T
+where
+    T: Solution,
+{
     let mut best_idx: usize = 0;
     for i in 1..pop.len() {
         if pop[i].collapsed() > pop[best_idx].collapsed() {
@@ -38,8 +41,7 @@ where
 // Invariants: `indices` must be no longer than `slice`
 // and not contain any index twice
 pub fn bring_indices_to_front<T>(slice: &mut [T], mut indices: Vec<usize>) {
-    #[cfg(debug_assertions)]
-    assert!(indices.len() <= slice.len());
+    debug_assert!(indices.len() <= slice.len());
 
     indices.sort();
     let mut swap_to: usize = 0;

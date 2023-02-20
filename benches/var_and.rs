@@ -1,7 +1,7 @@
 use std::ops::{Deref, DerefMut};
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use eviolite::{Solution, alg::var_and, repro_thread_rng::thread_rng};
+use eviolite::{alg::var_and, repro_thread_rng::thread_rng, Solution};
 use rand::Rng;
 
 #[derive(Clone, Copy)]
@@ -28,7 +28,7 @@ impl Solution for Matrix3x3 {
         Matrix3x3([
             [rng.gen(), rng.gen(), rng.gen()],
             [rng.gen(), rng.gen(), rng.gen()],
-            [rng.gen(), rng.gen(), rng.gen()]
+            [rng.gen(), rng.gen(), rng.gen()],
         ])
     }
 
@@ -39,13 +39,19 @@ impl Solution for Matrix3x3 {
     fn crossover(a: &mut Self, b: &mut Self) {
         let mut rng = thread_rng();
         // sampling a usize directly is bad for portability, so we sample a u32 and cast
-        let (i, j) = (rng.gen_range::<u32,_>(0..=2) as usize, rng.gen_range::<u32,_>(0..=2) as usize);
+        let (i, j) = (
+            rng.gen_range::<u32, _>(0..=2) as usize,
+            rng.gen_range::<u32, _>(0..=2) as usize,
+        );
         (a[i][i], b[i][j]) = (b[i][j], a[i][j]);
     }
 
     fn mutate(&mut self) {
         let mut rng = thread_rng();
-        let (i, j) = (rng.gen_range::<u32,_>(0..=2) as usize, rng.gen_range::<u32,_>(0..=2) as usize);
+        let (i, j) = (
+            rng.gen_range::<u32, _>(0..=2) as usize,
+            rng.gen_range::<u32, _>(0..=2) as usize,
+        );
         self[i][j] = (self[i][j] + rng.gen::<f64>()) / 2.0;
     }
 }
@@ -55,12 +61,12 @@ pub fn bench_var_and(c: &mut Criterion) {
     for _ in 0..500 {
         pop.push(Matrix3x3::generate());
     }
-    c.bench_function("var_and 3x3 500 0.5 0.5", |b| 
+    c.bench_function("var_and 3x3 500 0.5 0.5", |b| {
         b.iter(|| {
             var_and(&mut pop, 0.5, 0.5);
             black_box(&pop);
-        }
-    ));
+        })
+    });
 }
 
 criterion_group!(grp_var_and, bench_var_and);
