@@ -1,15 +1,31 @@
+//! Per-generation statistical analysis
+//! 
+//! This module contains the [`GenerationStats`] trait.
+//! You can implement this trait for a type to calculate whatever statistics you want about a given generation of solutions.
+//! When you call [`.run()`] on your [`Evolution`] instance, you'll receive a `Vec` of statistics about each successive generation.
+//! 
+//! If you just want to get started quickly, this module also includes a few simple implementors.
+//! [`GenerationStats`] is also implemented for `()` as a no-op,
+//! allowing you to opt-out of calculating any statistics.
+//! 
+//! [`.run()`]: ../struct.Evolution.html#method.run
+//! [`Evolution`]: ../struct.Evolution.html
+
+
 use crate::{fitness::MultiObjective, utils::Cached, Solution};
 
+/// Trait that indicates a type represents statistics about
+/// a generation of solutions
 pub trait GenerationStats<T: Solution> {
+    /// Analyze the generation and generate statistics about it.
     fn analyze(generation: &[Cached<T>]) -> Self;
 }
 
 impl<T> GenerationStats<T> for () where T: Solution {
-    fn analyze(generation: &[Cached<T>]) -> Self {
-        ()
-    }
+    fn analyze(_: &[Cached<T>]) -> Self { }
 }
 
+/// Simple stats about the fitness values of a generation
 pub struct FitnessBasicMulti<const M: usize> {
     mean: [f64; M],
     variance: [f64; M],
@@ -17,14 +33,17 @@ pub struct FitnessBasicMulti<const M: usize> {
 }
 
 impl<const M: usize> FitnessBasicMulti<M> {
+    /// Get the mean for each objective.
     pub fn mean(&self) -> &[f64] {
         &self.mean
     }
 
+    /// Get the variance for each objective.
     pub fn variance(&self) -> &[f64] {
         &self.variance
     }
 
+    /// Get the standard deviation for each objective.
     pub fn stdev(&self) -> &[f64] {
         &self.stdev
     }

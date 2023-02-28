@@ -1,31 +1,42 @@
-use std::cmp::Ordering;
-use std::collections::HashMap;
 use std::fmt::Debug;
-use std::{ops::Mul, path::Path};
 
-use rayon::slice::ParallelSliceMut;
-
-use crate::Cached;
-use crate::fitness::MultiObjective;
 use crate::{
-    Fitness,
-    select::{utils::retain_indices, Select},
     Solution,
+    Cached,
+    fitness::MultiObjective,
+    select::{utils::retain_indices, Select},
 };
 
+
+/// NSGA-II selection operator
+/// 
+/// This struct implements the NSGA-II selection algorithm[^1].
+/// This algorithm is designed for multi-objective optimization,
+/// and as such only works with solutions whose fitness is a [`MultiObjective`].
+/// 
+/// [^1]: Deb, Pratap, Agarwal, & Meyarivan.
+/// "A fast and elitist multiobjective genetic algorithm: NSGA-II."
+/// 2002. <https://doi.org/10.1109/4235.996017>
 pub struct NSGA2;
 
 impl<T, const M: usize> Select<T> for NSGA2
 where
     T: Solution<Fitness = MultiObjective<M>>,
 {
-    fn select(&self, n: usize, pop: &mut Vec<Cached<T>>) {
+    fn select(&self, k: usize, pop: &mut Vec<Cached<T>>) {
+        let indices = self.select_indices(k, pop).0;
+        retain_indices(pop, indices);
+    }
+}
+
+impl NSGA2 {
+    pub(crate) fn select_indices<T, const M: usize>(&self, n: usize, pop: &[Cached<T>]) -> (Vec<usize>, ParetoFronts) where T: Solution<Fitness = MultiObjective<M>> {
         debug_assert!(n <= pop.len());
 
         let pareto = rank_nondominated(pop);
 
         let mut indices: Vec<usize> = (0..pop.len()).collect();
-        indices.sort_unstable_by_key(|&i| pareto.rankings[i]);
+        indices.sort_unstable_by_key(|&i| pareto.ranks[i]);
 
         let mut selected: Vec<usize> = Vec::with_capacity(n);
 
@@ -42,29 +53,36 @@ where
         // Cut off the ranks we're not using any of
         indices.truncate(pareto.counts[curr_rank]);
 
-        sort_by_crowding_distance(&mut indices, &pop);
+        sort_by_crowding_distance(&mut indices, pop);
 
         selected.extend_from_slice(&indices[..n - count_sum]);
 
-        retain_indices(pop, selected);
+        (selected, pareto)
     }
 }
 
+/// A representation of the nondominated ranks of a population
+/// 
+/// The set of solutions with a given nondominated rank are also known as a
+/// [Pareto front](https://en.wikipedia.org/wiki/Pareto_front),
+/// hence the name.
 pub struct ParetoFronts {
-    pub rankings: Vec<usize>,
+    /// Each of the members' nondominated ranks
+    pub ranks: Vec<usize>,
+    /// The size of each rank in order
     pub counts: Vec<usize>,
 }
 
 impl ParetoFronts {
     fn new(popsize: usize) -> Self {
         ParetoFronts {
-            rankings: vec![0; popsize],
+            ranks: vec![0; popsize],
             counts: Vec::new(),
         }
     }
 
     fn add_ranking(&mut self, idx: usize, rank: usize) {
-        self.rankings[idx] = rank;
+        self.ranks[idx] = rank;
         if let Some(count) = self.counts.get_mut(rank) {
             *count += 1;
         } else {
@@ -74,7 +92,21 @@ impl ParetoFronts {
     }
 }
 
-// Implements the Best Order Sort algorithm for nondominated sorting from [Roy2016]
+/// Determine the nondominated rank of every solution in a population
+/// 
+/// The nondominated rank is a metric used in multi-objective optimization.
+/// A solution *dominates* another if it outperforms it in every objective.
+/// If a solution is not dominated by any other solution in the population,
+/// it is assigned a rank of 0. If a solution is not dominated by any other
+/// solution in the set of solutions whose rank is not 0, it is assigned a
+/// rank of 1. This continues recursively until every solution in the
+/// population has an associated rank.
+/// 
+/// This function implements the Best Order Sort algorithm for nondominated ranking[^1].
+/// 
+/// [^1]: Roy, Islam, & Deb.
+/// "Best Order Sort: A New Algorithm to Non-dominated Sorting for Evolutionary Multi-objective Optimization."
+/// 2016. <https://doi.org/10.1145/2908961.2931684>
 pub fn rank_nondominated<T, const M: usize>(pop: &[T]) -> ParetoFronts
 where
     T: Solution<Fitness = MultiObjective<M>>,
@@ -105,7 +137,7 @@ where
             let s = q[j][i];
             c[s].retain(|&k| k != j);
             if is_ranked[s] {
-                l[pareto.rankings[s]][j].push(s);
+                l[pareto.ranks[s]][j].push(s);
             } else {
                 // Algorithm 3: FindRank
                 let mut done = false;
@@ -142,7 +174,7 @@ where
     pareto
 }
 
-fn sort_by_crowding_distance<T, const M: usize>(front: &mut [usize], pop: &[Cached<T>])
+pub fn sort_by_crowding_distance<T, const M: usize>(front: &mut [usize], pop: &[Cached<T>])
 where
     T: Solution<Fitness = MultiObjective<M>>,
 {
@@ -219,36 +251,13 @@ fn cmp_dom_f64_slices<const M: usize>(a: &[f64; M], b: &[f64; M]) -> DomOrdering
 #[cfg(test)]
 mod tests {
     use itertools::Itertools;
-    use rand::{seq::SliceRandom, Rng};
 
     use crate::{
-        repro_thread_rng::{random, thread_rng},
+        testutils::*,
         utils::NFromFunction,
     };
 
     use super::*;
-
-    #[derive(Debug, Clone, Copy, PartialEq)]
-    struct Foo([f64; 2]);
-    impl Solution for Foo {
-        type Fitness = MultiObjective<2>;
-
-        fn generate() -> Self {
-            let mut rng = thread_rng();
-            Foo([rng.gen(), rng.gen()])
-        }
-
-        fn evaluate(&self) -> Self::Fitness {
-            MultiObjective::unweighted(self.0)
-        }
-
-        fn crossover(_: &mut Self, _: &mut Self) {
-            unreachable!()
-        }
-        fn mutate(&mut self) {
-            unreachable!()
-        }
-    }
 
     #[test]
     fn test_rank_nondominated() {
@@ -262,7 +271,7 @@ mod tests {
         ];
 
         let pareto = rank_nondominated(&pop);
-        let rankings = pareto.rankings;
+        let rankings = pareto.ranks;
         let counts = pareto.counts;
 
         assert_eq!(rankings, vec![1, 0, 1, 1, 0, 0]);
@@ -288,15 +297,15 @@ mod tests {
 
     #[test]
     fn test_best_order_sort_1d() {
-        let pop = Vec::n_from_function(100, f64::generate);
+        let pop = Vec::n_from_function(100, One::generate);
 
-        let rankings = rank_nondominated(&pop).rankings;
+        let rankings = rank_nondominated(&pop).ranks;
         let mut ranked: Vec<_> = rankings.into_iter().zip(pop.into_iter()).collect();
         ranked.sort_unstable_by_key(|(rank, _)| *rank);
         for (rank, members) in &ranked.into_iter().group_by(|(rank, _)| *rank) {
             print!("rank {}: ", rank);
             for (_, x) in members {
-                print!("{:.3} ", x);
+                print!("{:.3} ", x.0);
             }
             println!();
         }
@@ -306,7 +315,7 @@ mod tests {
     fn test_best_order_sort_3d() {
         let pop = Vec::n_from_function(1000, Bar::generate);
 
-        let rankings = rank_nondominated(&pop).rankings;
+        let rankings = rank_nondominated(&pop).ranks;
         let mut ranked: Vec<_> = rankings.into_iter().zip(pop.into_iter()).collect();
         ranked.sort_unstable_by_key(|(rank, _)| *rank);
         for (rank, members) in &ranked.into_iter().group_by(|(rank, _)| *rank) {
@@ -315,47 +324,6 @@ mod tests {
                 print!("({:.3}, {:.3}, {:.3}) ", bar.0[0], bar.0[1], bar.0[2]);
             }
             println!();
-        }
-    }
-
-    #[derive(Debug, Clone, Copy, PartialEq)]
-    struct Bar([f64; 3]);
-    impl Solution for Bar {
-        type Fitness = MultiObjective<3>;
-
-        fn generate() -> Self {
-            let mut rng = thread_rng();
-            Bar([-rng.gen::<f64>(), -rng.gen::<f64>(), -rng.gen::<f64>()])
-        }
-
-        fn evaluate(&self) -> Self::Fitness {
-            MultiObjective::unweighted(self.0)
-        }
-
-        fn crossover(_: &mut Self, _: &mut Self) {
-            unreachable!()
-        }
-        fn mutate(&mut self) {
-            unreachable!()
-        }
-    }
-
-    impl Solution for f64 {
-        type Fitness = MultiObjective<1>;
-
-        fn generate() -> Self {
-            random()
-        }
-
-        fn evaluate(&self) -> Self::Fitness {
-            MultiObjective::unweighted([*self])
-        }
-
-        fn crossover(_: &mut Self, _: &mut Self) {
-            unreachable!()
-        }
-        fn mutate(&mut self) {
-            unreachable!()
         }
     }
 }

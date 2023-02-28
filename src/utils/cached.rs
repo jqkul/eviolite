@@ -1,11 +1,18 @@
-use std::cell::UnsafeCell;
+use std::{cell::UnsafeCell, fmt::Debug};
 
 use crate::{
-    traits::{Fitness, Solution}, fitness::MultiObjective,
+    Solution,
+    fitness::MultiObjective,
 };
 
+/// A wrapper around a solution that automatically caches the fitness value
+/// 
+/// Evaluating the fitness of solutions is nearly always the most computationally intensive
+/// part of an evolutionary algorithm. This wrapper type makes it so that that computation
+/// will only ever happen once for every distinct individual. It implements [`Solution`] itself,
+/// so you can use the exact same interface you would if it weren't there.
 pub struct Cached<T: Solution> {
-    individual: T,
+    inner: T,
     fitness: UnsafeCell<Option<T::Fitness>>,
 }
 
@@ -17,7 +24,7 @@ where
 
     fn generate() -> Self {
         Cached {
-            individual: T::generate(),
+            inner: T::generate(),
             fitness: UnsafeCell::new(None),
         }
     }
@@ -26,7 +33,7 @@ where
         if let Some(fitness) = unsafe { *self.fitness.get() } {
             fitness
         } else {
-            let new_fitness = self.individual.evaluate();
+            let new_fitness = self.inner.evaluate();
             unsafe {
                 *self.fitness.get() = Some(new_fitness);
             }
@@ -35,13 +42,13 @@ where
     }
 
     fn crossover(a: &mut Self, b: &mut Self) {
-        T::crossover(&mut a.individual, &mut b.individual);
+        T::crossover(&mut a.inner, &mut b.inner);
         Cached::invalidate(a);
         Cached::invalidate(b);
     }
 
     fn mutate(&mut self) {
-        self.individual.mutate();
+        self.inner.mutate();
         Cached::invalidate(self);
     }
 }
@@ -52,7 +59,7 @@ where
 {
     fn clone(&self) -> Self {
         Cached {
-            individual: self.individual.clone(),
+            inner: self.inner.clone(),
             fitness: UnsafeCell::new(unsafe { *self.fitness.get() }),
         }
     }
@@ -63,25 +70,49 @@ where
     T: Solution,
 {
     fn as_ref(&self) -> &T {
-        &self.individual
+        &self.inner
     }
 }
 
-unsafe impl<T> Sync for Cached<T> where T: Solution {}
+impl<T> PartialEq for Cached<T> where T: Solution + PartialEq {
+    fn eq(&self, other: &Cached<T>) -> bool {
+        self.inner.eq(&other.inner)
+    }
+}
+
+impl<T> PartialEq<T> for Cached<T> where T: Solution + PartialEq {
+    fn eq(&self, other: &T) -> bool {
+        self.inner.eq(other)
+    }
+}
+
+impl<T> Debug for Cached<T> where T: Solution + Debug, T::Fitness: Debug {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Cached")
+        .field("solution", &self.inner)
+        .field("stored_fitness", unsafe { &*self.fitness.get() })
+        .finish()
+    }
+}
+
+unsafe impl<T: Solution> Sync for Cached<T> {}
 
 impl<T> Cached<T>
 where
     T: Solution,
 {
+    /// Create a new wrapper around an existing solution.
     pub fn new(individual: T) -> Self {
         Cached {
-            individual,
+            inner: individual,
             fitness: UnsafeCell::new(None),
         }
     }
 
+    /// Consumes the `Cached`, returning a tuple of the solution it contained
+    /// and an [`Option`] of the fitness value that could have been cached.
     pub fn into_inner(mut this: Self) -> (T, Option<T::Fitness>) {
-        (this.individual, *this.fitness.get_mut())
+        (this.inner, *this.fitness.get_mut())
     }
 }
 
@@ -90,7 +121,9 @@ where
     T: Solution<Fitness = MultiObjective<M>>,
 {
     pub(crate) fn fit(this: &Self, m: usize) -> f64 {
-        unsafe { &*this.fitness.get() }.as_ref().unwrap()[m]
+        unsafe {
+            &*this.fitness.get()
+        }.as_ref().unwrap()[m]
     }
 }
 

@@ -1,18 +1,3 @@
-use crate::Solution;
-
-pub fn find_best<T>(pop: &[T]) -> &T
-where
-    T: Solution,
-{
-    let mut best_idx: usize = 0;
-    for i in 1..pop.len() {
-        if pop[i].collapsed() > pop[best_idx].collapsed() {
-            best_idx = i;
-        }
-    }
-    &pop[best_idx]
-}
-
 // Mutate `vec` in place, keeping only the elements at the positions
 // specified by `indices`. Clones elements only for duplicate indices.
 pub fn retain_indices<T>(vec: &mut Vec<T>, mut indices: Vec<usize>)
@@ -36,19 +21,6 @@ where
         i += 1;
     }
     vec.truncate(n_indices);
-}
-
-// Invariants: `indices` must be no longer than `slice`
-// and not contain any index twice
-pub fn bring_indices_to_front<T>(slice: &mut [T], mut indices: Vec<usize>) {
-    debug_assert!(indices.len() <= slice.len());
-
-    indices.sort();
-    let mut swap_to: usize = 0;
-    for idx in indices {
-        slice.swap(swap_to, idx);
-        swap_to += 1;
-    }
 }
 
 #[cfg(test)]

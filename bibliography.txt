@@ -1,2 +1,5 @@
+[Deb2002]
+Deb, Pratap, Agarwal, & Meyarivan. "A fast and elitist multiobjective genetic algorithm: NSGA-II." 2002. https://doi.org/10.1109/4235.996017
+
 [Roy2016]
-Roy, Islam, and Deb, "Best Order Sort: A New Algorithm to Non-dominated Sorting for Evolutionary Multi-objective Optimization," 2016.
+Roy, Islam, & Deb. "Best Order Sort: A New Algorithm to Non-dominated Sorting for Evolutionary Multi-objective Optimization." 2016. https://doi.org/10.1145/2908961.2931684

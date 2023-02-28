@@ -1,28 +1,34 @@
 [package]
 name = "eviolite"
 version = "0.1.0"
+authors = ["Jacqueline Kulas"]
 edition = "2021"
+description = "Toolkit for working with evolutionary algorithms"
+documentation = "https://docs.rs/eviolite"
+readme = "README.md"
+repository = "https://github.com/jqkul/eviolite"
 license = "MIT"
-description = "A platform for working with evolutionary algorithms"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-itertools = "0.10.5"
-rand = "0.8.5"
-rand_xoshiro = "0.6.0"
-rayon = "1.6.1"
-ndarray = { version = "0.15.6", optional = true }
+itertools = "0.10"
+rand = "0.8"
+rand_xoshiro = "0.6"
+rayon = "1.6"
+
+ndarray = { version = "0.15", optional = true }
+num-traits = { version = "0.2", optional = true }
+rand_distr = { version = "0.4", optional = true }
+
+[features]
+ndarray = ["dep:ndarray", "dep:num-traits", "dep:rand_distr"]
 
 [dev-dependencies]
-criterion = "0.4.0"
-itertools = "0.10.5"
-num = "0.4.0"
+criterion = "0.4"
+num = "0.4"
 
-[[bench]]
-name = "var_and"
-harness = false
-
-[[bench]]
-name = "pi_frac"
-harness = false
+# docs.rs-specific configuration
+[package.metadata.docs.rs]
+# document all features
+all-features = true
+# defines the configuration attribute `docsrs`
+rustdoc-args = ["--cfg", "docsrs"]
