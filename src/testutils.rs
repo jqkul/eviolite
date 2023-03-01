@@ -1,9 +1,9 @@
 use rand::Rng;
 
 use crate::{
-    Solution,
     fitness::MultiObjective,
-    repro_rng::{thread_rng, random},
+    repro_rng::{random, thread_rng},
+    Solution,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]

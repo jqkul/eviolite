@@ -1,5 +1,5 @@
 //! Pre-built algorithms
-//! 
+//!
 //! This module contains the [`Algorithm`] trait and several pre-built algorithms that are commonly used.
 //! If you want to get started quickly, using one of the pre-built algorithms is your best bet.
 
@@ -8,51 +8,51 @@ use std::marker::PhantomData;
 use rand::{seq::SliceRandom, Rng};
 
 use crate::{
-    Solution,
-    fitness::{MultiObjective, par_evaluate},
+    fitness::{par_evaluate, MultiObjective},
     repro_rng::thread_rng,
     select::{Select, Stochastic},
-    utils::Cached
+    utils::Cached,
+    Solution,
 };
 
 /// A trait that describes the basic functionality of an evolutionary algorithm.
-/// 
+///
 /// You can implement this yourself, or use one of the provided algorithms in this module.
 pub trait Algorithm<T: Solution> {
     /// Advance one generation.
-    /// 
+    ///
     /// The hall of fame and statistics are updated between calls to this method,
     /// so it must leave the population in a state where all the solutions in it
     /// are "presentable."
-    /// 
+    ///
     /// [`Evolution`] will automatically evaluate the population between calls,
     /// so all solutions will have cached fitness values when this method is called.
     /// If you add new solutions to the population before selecting,
     /// you will need to manually call [`par_evaluate()`] between those steps
     /// in order to have good performance.
-    /// 
+    ///
     /// [`Evolution`]: ../struct.Evolution.html
     /// [`par_evaluate()`]: ./fn.par_evaluate.html
     fn step(&self, population: &mut Vec<Cached<T>>);
 
     /// Get the desired population size of the algorithm.
-    /// 
+    ///
     /// This is used by [`Evolution`] to generate the initial population for a run.
-    /// 
+    ///
     /// [`Evolution`]: ../struct.Evolution.html
     fn pop_size(&self) -> usize;
 }
 
 /// One of the simplest possible evolutionary algorithms.
-/// 
+///
 /// This is a good starting point, especially for single-objective optimization,
 /// but it is only recommended as a starting point.
-/// 
+///
 /// The selection operator for this algorithm must implement the [`Stochastic`] trait
 /// to show that randomness is involved in its selection. The algorithm selects N
 /// solutions from a population of N, so if the selector is not stochastic, it will always
 /// just yield the same population.
-/// 
+///
 /// Pseudocode
 /// ----------
 /// A single step of the algorithm does the following:
@@ -62,15 +62,23 @@ pub trait Algorithm<T: Solution> {
 /// apply var_and to the population
 /// ```
 #[derive(Clone, Debug)]
-pub struct Simple<T, S> where T: Solution, S: Select<T> + Stochastic {
+pub struct Simple<T, S>
+where
+    T: Solution,
+    S: Select<T> + Stochastic,
+{
     pop_size: usize,
     cxpb: f64,
     mutpb: f64,
     selector: S,
-    _phantom: PhantomData<T>
+    _phantom: PhantomData<T>,
 }
 
-impl<T, S> Simple<T, S> where T: Solution, S: Select<T> + Stochastic {
+impl<T, S> Simple<T, S>
+where
+    T: Solution,
+    S: Select<T> + Stochastic,
+{
     /// Create a new instance of the `Simple` algorithm with the specified parameters.
     pub fn new(pop_size: usize, cxpb: f64, mutpb: f64, selector: S) -> Self {
         Simple {
@@ -78,12 +86,16 @@ impl<T, S> Simple<T, S> where T: Solution, S: Select<T> + Stochastic {
             cxpb,
             mutpb,
             selector,
-            _phantom: PhantomData
+            _phantom: PhantomData,
         }
     }
 }
 
-impl<T, S> Algorithm<T> for Simple<T, S> where T: Solution, S: Select<T> + Stochastic {
+impl<T, S> Algorithm<T> for Simple<T, S>
+where
+    T: Solution,
+    S: Select<T> + Stochastic,
+{
     fn pop_size(&self) -> usize {
         self.pop_size
     }
@@ -98,7 +110,7 @@ impl<T, S> Algorithm<T> for Simple<T, S> where T: Solution, S: Select<T> + Stoch
 }
 
 /// Implementation of the (μ + λ) evolutionary algorithm.
-/// 
+///
 /// Pseudocode
 /// ----------
 /// A single step of the algorithm does the following:
@@ -110,16 +122,24 @@ impl<T, S> Algorithm<T> for Simple<T, S> where T: Solution, S: Select<T> + Stoch
 /// replace the population with that selection
 /// ```
 #[derive(Clone, Debug)]
-pub struct MuPlusLambda<T, S> where T: Solution, S: Select<T> {
+pub struct MuPlusLambda<T, S>
+where
+    T: Solution,
+    S: Select<T>,
+{
     mu: usize,
     lambda: usize,
     cxpb: f64,
     mutpb: f64,
     selector: S,
-    _phantom: PhantomData<T>
+    _phantom: PhantomData<T>,
 }
 
-impl<T, S> MuPlusLambda<T, S> where T: Solution, S: Select<T> {
+impl<T, S> MuPlusLambda<T, S>
+where
+    T: Solution,
+    S: Select<T>,
+{
     /// Create a new instance of the `MuPlusLambda` algorithm with the specified parameters.
     pub fn new(mu: usize, lambda: usize, cxpb: f64, mutpb: f64, selector: S) -> Self {
         MuPlusLambda {
@@ -128,12 +148,16 @@ impl<T, S> MuPlusLambda<T, S> where T: Solution, S: Select<T> {
             cxpb,
             mutpb,
             selector,
-            _phantom: PhantomData
+            _phantom: PhantomData,
         }
     }
 }
 
-impl<T, S> Algorithm<T> for MuPlusLambda<T, S> where T: Solution, S: Select<T> {
+impl<T, S> Algorithm<T> for MuPlusLambda<T, S>
+where
+    T: Solution,
+    S: Select<T>,
+{
     fn pop_size(&self) -> usize {
         self.mu
     }
@@ -148,7 +172,7 @@ impl<T, S> Algorithm<T> for MuPlusLambda<T, S> where T: Solution, S: Select<T> {
 }
 
 /// Implementation of the (μ, λ) evolutionary algorithm.
-/// 
+///
 /// Pseudocode
 /// ----------
 /// A single step of the algorithm does the following:
@@ -160,18 +184,26 @@ impl<T, S> Algorithm<T> for MuPlusLambda<T, S> where T: Solution, S: Select<T> {
 /// make that selection the new population
 /// ```
 #[derive(Clone, Debug)]
-pub struct MuCommaLambda<T, S> where T: Solution, S: Select<T> {
+pub struct MuCommaLambda<T, S>
+where
+    T: Solution,
+    S: Select<T>,
+{
     mu: usize,
     lambda: usize,
     cxpb: f64,
     mutpb: f64,
     selector: S,
-    _phantom: PhantomData<T>
+    _phantom: PhantomData<T>,
 }
 
-impl<T, S> MuCommaLambda<T, S> where T: Solution, S: Select<T> {
+impl<T, S> MuCommaLambda<T, S>
+where
+    T: Solution,
+    S: Select<T>,
+{
     /// Create a new instance of the `MuPlusLambda` algorithm with the specified parameters.
-    /// 
+    ///
     /// Panics
     /// ======
     /// Panics if `mu > lambda`. The algorithm requires μ to be less than or equal to λ to work,
@@ -186,12 +218,16 @@ impl<T, S> MuCommaLambda<T, S> where T: Solution, S: Select<T> {
             cxpb,
             mutpb,
             selector,
-            _phantom: PhantomData
+            _phantom: PhantomData,
         }
     }
 }
 
-impl<T, S> Algorithm<T> for MuCommaLambda<T, S> where T: Solution, S: Select<T> {
+impl<T, S> Algorithm<T> for MuCommaLambda<T, S>
+where
+    T: Solution,
+    S: Select<T>,
+{
     fn pop_size(&self) -> usize {
         self.mu
     }
@@ -206,10 +242,10 @@ impl<T, S> Algorithm<T> for MuCommaLambda<T, S> where T: Solution, S: Select<T> 
 }
 
 /// An implementation of the NSGA-II evolutionary algorithm.
-/// 
+///
 /// For more information about NSGA-II, see the documentation for
 /// [`select::NSGA2`].
-/// 
+///
 /// [`select::NSGA2`]: ../select/struct.NSGA2.html
 #[derive(Clone, Debug)]
 pub struct NSGA2 {
@@ -221,17 +257,29 @@ pub struct NSGA2 {
 impl NSGA2 {
     /// Create a new instance of the `NSGA2` algorithm with the specified parameters.
     pub fn new(pop_size: usize, cxpb: f64, mutpb: f64) -> Self {
-        NSGA2 { pop_size, cxpb, mutpb }
+        NSGA2 {
+            pop_size,
+            cxpb,
+            mutpb,
+        }
     }
 }
 
-impl<T, const M: usize> Algorithm<T> for NSGA2 where T: Solution<Fitness = MultiObjective<M>> {
+impl<T, const M: usize> Algorithm<T> for NSGA2
+where
+    T: Solution<Fitness = MultiObjective<M>>,
+{
     fn pop_size(&self) -> usize {
         self.pop_size
     }
 
     fn step(&self, population: &mut Vec<Cached<T>>) {
-        population.append(&mut gen_or(population, self.pop_size, self.cxpb, self.mutpb));
+        population.append(&mut gen_or(
+            population,
+            self.pop_size,
+            self.cxpb,
+            self.mutpb,
+        ));
 
         par_evaluate(population);
 
@@ -240,10 +288,10 @@ impl<T, const M: usize> Algorithm<T> for NSGA2 where T: Solution<Fitness = Multi
 }
 
 /// Vary a population in place.
-/// 
+///
 /// This function has the potential to apply both crossover *and* mutation
 /// to the same solution, hence the name.
-/// 
+///
 /// Pseudocode
 /// ----------
 /// ```notrust
@@ -251,7 +299,7 @@ impl<T, const M: usize> Algorithm<T> for NSGA2 where T: Solution<Fitness = Multi
 ///     if a random check of chance cxpb passes:
 ///         apply crossover between the solution and the one adjacent to it
 ///     if a random check of chance mutpb passes:
-///         apply mutation to the solution 
+///         apply mutation to the solution
 /// ```
 pub fn var_and<T>(pop: &mut [T], cxpb: f64, mutpb: f64)
 where
@@ -273,9 +321,9 @@ where
 }
 
 /// Generate offspring from a population.
-/// 
+///
 /// This function only ever applies crossover *or* mutation to a solution, hence the name.
-/// 
+///
 /// Pseudocode
 /// ----------
 /// ```notrust
@@ -293,7 +341,7 @@ where
 ///         randomly choose a solution from the population and clone it
 ///         add the clone to the offspring     
 /// ```
-/// 
+///
 /// The probabilities of crossover, mutate, and clone being chosen each iteration are
 /// `cxpb`, `mutpb`, and `1 - (cxpb + mutpb)` respectively.
 pub fn gen_or<T: Solution>(pop: &[T], n_offspring: usize, cxpb: f64, mutpb: f64) -> Vec<T> {

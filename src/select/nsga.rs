@@ -1,19 +1,17 @@
 use std::fmt::Debug;
 
 use crate::{
-    Solution,
-    Cached,
     fitness::MultiObjective,
     select::{utils::retain_indices, Select},
+    Cached, Solution,
 };
 
-
 /// NSGA-II selection operator
-/// 
+///
 /// This struct implements the NSGA-II selection algorithm[^1].
 /// This algorithm is designed for multi-objective optimization,
 /// and as such only works with solutions whose fitness is a [`MultiObjective`].
-/// 
+///
 /// [^1]: Deb, Pratap, Agarwal, & Meyarivan.
 /// "A fast and elitist multiobjective genetic algorithm: NSGA-II."
 /// 2002. <https://doi.org/10.1109/4235.996017>
@@ -30,7 +28,14 @@ where
 }
 
 impl NSGA2 {
-    pub(crate) fn select_indices<T, const M: usize>(&self, n: usize, pop: &[Cached<T>]) -> (Vec<usize>, ParetoFronts) where T: Solution<Fitness = MultiObjective<M>> {
+    pub(crate) fn select_indices<T, const M: usize>(
+        &self,
+        n: usize,
+        pop: &[Cached<T>],
+    ) -> (Vec<usize>, ParetoFronts)
+    where
+        T: Solution<Fitness = MultiObjective<M>>,
+    {
         debug_assert!(n <= pop.len());
 
         let pareto = rank_nondominated(pop);
@@ -62,7 +67,7 @@ impl NSGA2 {
 }
 
 /// A representation of the nondominated ranks of a population
-/// 
+///
 /// The set of solutions with a given nondominated rank are also known as a
 /// [Pareto front](https://en.wikipedia.org/wiki/Pareto_front),
 /// hence the name.
@@ -93,7 +98,7 @@ impl ParetoFronts {
 }
 
 /// Determine the nondominated rank of every solution in a population
-/// 
+///
 /// The nondominated rank is a metric used in multi-objective optimization.
 /// A solution *dominates* another if it outperforms it in every objective.
 /// If a solution is not dominated by any other solution in the population,
@@ -101,9 +106,9 @@ impl ParetoFronts {
 /// solution in the set of solutions whose rank is not 0, it is assigned a
 /// rank of 1. This continues recursively until every solution in the
 /// population has an associated rank.
-/// 
+///
 /// This function implements the Best Order Sort algorithm for nondominated ranking[^1].
-/// 
+///
 /// [^1]: Roy, Islam, & Deb.
 /// "Best Order Sort: A New Algorithm to Non-dominated Sorting for Evolutionary Multi-objective Optimization."
 /// 2016. <https://doi.org/10.1145/2908961.2931684>
@@ -252,10 +257,7 @@ fn cmp_dom_f64_slices<const M: usize>(a: &[f64; M], b: &[f64; M]) -> DomOrdering
 mod tests {
     use itertools::Itertools;
 
-    use crate::{
-        testutils::*,
-        utils::NFromFunction,
-    };
+    use crate::{testutils::*, utils::NFromFunction};
 
     use super::*;
 

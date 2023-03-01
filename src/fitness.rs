@@ -1,12 +1,12 @@
 //! Representation and evaluation of fitness values
-//! 
+//!
 //! This module contains [`MultiObjective`].
 //! You should use either `f64` or [`MultiObjective`]
 //! as your [`Solution`]'s fitness type for simple applications.
-//! 
+//!
 //! This module also contains [`par_evaluate`], a function that uses
 //! [`rayon`]'s parallel iterators to efficiently evaluate a population.
-//! 
+//!
 //! [`Solution`]: ../trait.Solution.html
 //! [`MultiObjective`]: ./struct.MultiObjective.html
 
@@ -14,10 +14,10 @@ use std::ops::Deref;
 
 use rayon::prelude::*;
 
-use crate::{Solution, Cached};
+use crate::{Cached, Solution};
 
 /// Type that represents fitness values in multi-objective optimization
-/// 
+///
 /// This type includes support for weighted fitness values,
 /// which can then be collapsed into a single combined fitness.
 #[derive(Clone, Copy, Debug)]
@@ -37,7 +37,7 @@ impl<const M: usize> From<MultiObjective<M>> for f64 {
 
 impl<const M: usize> MultiObjective<M> {
     /// Create a new instance of `MultiObjective` that contains exactly `values` with no weighting.
-    /// 
+    ///
     /// Example
     /// =======
     /// ```
@@ -50,7 +50,7 @@ impl<const M: usize> MultiObjective<M> {
     }
 
     /// Create a builder that produces `MultiObjective` instances weighted by `weights`.
-    /// 
+    ///
     /// Example
     /// =======
     /// ```
@@ -97,10 +97,10 @@ impl PartialEq<f64> for MultiObjective<1> {
 }
 
 /// Evaluate the fitness of every solution in a population in parallel.
-/// 
+///
 /// For good performance, you should only ever evaluate solutions using this function, not
 /// using the [`.evaluate()`] method directly.
-/// 
+///
 /// [`.evaluate()`]: ../trait.Solution.html#tymethod.evaluate
 pub fn par_evaluate<T: Solution>(pop: &[Cached<T>]) {
     pop.par_iter().for_each(|ind| {

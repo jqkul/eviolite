@@ -1,2 +1,3 @@
-# eviolite
-Rust library for genetic algorithms
+# Eviolite
+Rust library for evolutionary algorithms
+

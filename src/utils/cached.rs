@@ -1,12 +1,9 @@
 use std::{cell::UnsafeCell, fmt::Debug};
 
-use crate::{
-    Solution,
-    fitness::MultiObjective,
-};
+use crate::{fitness::MultiObjective, Solution};
 
 /// A wrapper around a solution that automatically caches the fitness value
-/// 
+///
 /// Evaluating the fitness of solutions is nearly always the most computationally intensive
 /// part of an evolutionary algorithm. This wrapper type makes it so that that computation
 /// will only ever happen once for every distinct individual. It implements [`Solution`] itself,
@@ -74,24 +71,34 @@ where
     }
 }
 
-impl<T> PartialEq for Cached<T> where T: Solution + PartialEq {
+impl<T> PartialEq for Cached<T>
+where
+    T: Solution + PartialEq,
+{
     fn eq(&self, other: &Cached<T>) -> bool {
         self.inner.eq(&other.inner)
     }
 }
 
-impl<T> PartialEq<T> for Cached<T> where T: Solution + PartialEq {
+impl<T> PartialEq<T> for Cached<T>
+where
+    T: Solution + PartialEq,
+{
     fn eq(&self, other: &T) -> bool {
         self.inner.eq(other)
     }
 }
 
-impl<T> Debug for Cached<T> where T: Solution + Debug, T::Fitness: Debug {
+impl<T> Debug for Cached<T>
+where
+    T: Solution + Debug,
+    T::Fitness: Debug,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Cached")
-        .field("solution", &self.inner)
-        .field("stored_fitness", unsafe { &*self.fitness.get() })
-        .finish()
+            .field("solution", &self.inner)
+            .field("stored_fitness", unsafe { &*self.fitness.get() })
+            .finish()
     }
 }
 
@@ -121,9 +128,7 @@ where
     T: Solution<Fitness = MultiObjective<M>>,
 {
     pub(crate) fn fit(this: &Self, m: usize) -> f64 {
-        unsafe {
-            &*this.fitness.get()
-        }.as_ref().unwrap()[m]
+        unsafe { &*this.fitness.get() }.as_ref().unwrap()[m]
     }
 }
 

@@ -1,23 +1,23 @@
 //! Reproducible and globally seedable version of [`rand`]'s `thread_rng`
-//! 
+//!
 //! This module contains a drop-in replacement for [`random`][rand::random] and [`thread_rng`][rand::thread_rng] from the [`rand`] crate.
 //! This version uses a faster, non-cryptographically-secure PRNG ([`Xoshiro256StarStar`][rand_xoshiro::Xoshiro256StarStar] from the [`rand_xoshiro`] crate),
-//! and never re-seeds it from an external source, making results using it fully 
+//! and never re-seeds it from an external source, making results using it fully
 //! reproducible by supplying the same seed as a previous run.
 //! To use it, just use this module's [`random`] and [`thread_rng`] instead of [`rand`]'s version
 //! every time you need to generate a random number.
-//! 
+//!
 //! Notes on reproducibility
 //! ------------------------
 //! When the RNG is initialized, the program will read the environment variable `EVIOLITE_SEED`
 //! and attempt to parse its contents as a `u64`. If it succeeds, it will seed the RNG with the result.
 //! If it fails, either in reading `EVIOLITE_SEED` or in parsing it as a `u64`, it will seed itself with
 //! a random number provided by the OS, and print the seed it used to standard error.
-//! 
+//!
 //! If you want to reproduce a run, **make sure to copy the seed from standard error and keep it.**
 //! In addition, **make sure never to use randomness in your [`Solution`]'s [`evaluate()`] method.**
 //! Any sane fitness evaluation shouldn't be random, so this shouldn't be much of a limitation.
-//! 
+//!
 //! [`random`]: ./fn.random.html
 //! [`thread_rng`]: ./fn.thread_rng.html
 //! [`Solution`]: ../trait.Solution.html
@@ -36,7 +36,7 @@ use rand_xoshiro::Xoshiro256StarStar;
 const SEED_ENV_VAR_NAME: &str = "EVIOLITE_SEED";
 
 /// A reference to the thread-local reproducible RNG
-/// 
+///
 /// This type works exactly the same as [`rand`]'s [`ThreadRng`][rand::rngs::ThreadRng],
 /// except that it can be seeded from an environment variable and uses a faster RNG.
 /// See the [module-level documentation][./index.html] for further information.
@@ -49,8 +49,9 @@ thread_local! {
         let seed: u64 = match std::env::var(SEED_ENV_VAR_NAME).map(|s| s.parse::<u64>()) {
             Ok(Ok(seed)) => seed,
             _ => {
+                eprintln!("eviolite: unable to read preset RNG seed from environment variable {}", SEED_ENV_VAR_NAME);
                 let seed = OsRng.next_u64();
-                eprintln!("eviolite: unable to read preset RNG seed from environment variable {}\neviolite: using OS-generated seed {}", SEED_ENV_VAR_NAME, seed);
+                eprintln!("eviolite: using OS-generated seed {}", seed);
                 seed
             }
         };
@@ -62,7 +63,7 @@ thread_local! {
 }
 
 /// Generate a random value using the reproducible thread-local RNG.
-/// 
+///
 /// This function works exactly the same as [`rand`]'s [`random()`][rand::random];
 /// see that documentation for further information.
 pub fn random<T>() -> T
@@ -73,7 +74,7 @@ where
 }
 
 /// Retrieve the lazily-initialized reproducible thread-local RNG.
-/// 
+///
 /// This function works exactly the same as [`rand`]'s [`thread_rng()`][rand::thread_rng],
 /// except that it can be seeded from an environment variable and uses a faster RNG.
 /// See the [module-level documentation][./index.html] for further information.
