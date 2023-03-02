@@ -8,7 +8,6 @@ documentation = "https://docs.rs/eviolite"
 readme = "README.md"
 repository = "https://github.com/jqkul/eviolite"
 license = "MIT"
-license-file = "LICENSE"
 keywords = ["evolution", "genetic", "algorithm", "optimization", "random"]
 categories = ["mathematics", "science", "simulation", "algorithms"]
 exclude = ["references.bib"]
