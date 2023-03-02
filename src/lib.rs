@@ -8,6 +8,9 @@
 //! and uses [`rayon`] to parallelize the most computationally intensive parts.
 //! It also includes a drop-in replacement for [`rand`]'s `thread_rng`
 //! that is fully reproducible and can be seeded from an environment variable.
+//! This means that if you get a run you like,
+//! you can share that seed with someone else alongside your program
+//! and they will be guaranteed to get the same output you got.
 //!
 //! The general workflow is to implement [`Solution`] for a type you wish to optimize,
 //! construct an instance of [`Evolution`], and call one of its `run_` methods.

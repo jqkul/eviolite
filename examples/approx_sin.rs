@@ -14,6 +14,15 @@ lazy_static::lazy_static! {
 #[derive(Clone)]
 struct Polynomial(Array1<f64>);
 
+impl Polynomial {
+    fn apply(&self, x: f64) -> f64 {
+        self.0[0]
+        + self.0[1] * x
+        + self.0[2] * x.powi(2)
+        + self.0[3] * x.powi(3)
+    }
+}
+
 impl Solution for Polynomial {
     type Fitness = f64;
 
@@ -40,17 +49,8 @@ impl Solution for Polynomial {
     }
 }
 
-impl Polynomial {
-    fn apply(&self, x: f64) -> f64 {
-        self.0[0]
-        + self.0[1] * x
-        + self.0[2] * x.powi(2)
-        + self.0[3] * x.powi(3)
-    }
-}
-
 fn main() {
-    let evo: Evolution<Polynomial, _, _, ()> = Evolution::new(
+    let evo: Evolution<Polynomial, _, _, ()> = Evolution::with_resets(
         // using the (μ + λ) algorithm
         alg::MuPlusLambda::new(
             // population size (μ)
@@ -66,10 +66,12 @@ fn main() {
         ),
 
         // a hall of fame that will track the single best polynomial we've found
-        hof::BestN::new(1)
+        hof::BestN::new(1),
+
+        // completely reset the algorithm every 25000 generations
+        25000
     );
 
-    
     let start = std::time::Instant::now();
     // run the algorithm until we have a polynomial that's accurate to 3 decimal places on average
     let log = evo.run_until(
