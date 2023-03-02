@@ -24,7 +24,10 @@ ndarray = ["dep:ndarray", "dep:num-traits", "dep:rand_distr"]
 
 [dev-dependencies]
 criterion = "0.4"
+lazy_static = "1.4"
 num = "0.4"
+ndarray = "0.15"
+ndarray-rand = "0.14"
 
 # docs.rs-specific configuration
 [package.metadata.docs.rs]

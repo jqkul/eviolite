@@ -97,6 +97,7 @@ where
     algorithm: Alg,
     hall_of_fame: Hof,
     stats: Vec<Stat>,
+    reset_interval: usize,
 }
 
 impl<T, Alg, Hof, Stat> Evolution<T, Alg, Hof, Stat>
@@ -113,13 +114,28 @@ where
             algorithm,
             hall_of_fame,
             stats: Vec::new(),
+            reset_interval: 0
+        }
+    }
+
+    /// Create a new [`Evolution`] that will completely reset and re-generate its population
+    /// every `reset_interval` generations during the run.
+    /// This can be used as a method to avoid getting stuck in a local optimum while still
+    /// tracking the best individuals across all runs.
+    /// If you find yourself running your program over and over again hoping for a better result,
+    /// consider using this feature to combine them all into one run.
+    pub fn with_resets(algorithm: Alg, hall_of_fame: Hof, reset_interval: usize) -> Self {
+        Evolution {
+            population: Vec::n_from_function(algorithm.pop_size(), Cached::generate),
+            algorithm,
+            hall_of_fame,
+            stats: Vec::new(),
+            reset_interval
         }
     }
 
     /// Run the algorithm for `n_gens` generations. Consumes the `Evolution` instance.
     ///
-    /// Returns
-    /// =======
     /// Returns an instance of [`Log`] containing the hall of fame and collected statistics for the run.
     ///
     /// [`Log`]: ./struct.Log.html
@@ -128,6 +144,8 @@ where
     }
 
     /// Run the algorithm until the provided `predicate` closure returns `true`.
+    /// 
+    /// Returns an instance of [`Log`] containing the hall of fame and collected statistics for the run.
     ///  
     /// [`Log`]: ./struct.Log.html
     pub fn run_until<F>(self, predicate: F) -> Log<T, Hof, Stat>
@@ -161,7 +179,7 @@ where
             });
             self.stats.push(stat);
 
-            self.algorithm.step(&mut self.population);
+            self.reset_or_step(generation);
         }
 
         Log {
@@ -205,7 +223,8 @@ where
 
             generation += 1;
 
-            self.algorithm.step(&mut self.population);
+            self.reset_or_step(generation);
+
             par_evaluate(&self.population);
             self.hall_of_fame.record(&self.population);
             stat = Stat::analyze(&self.population);
@@ -215,6 +234,20 @@ where
             hall_of_fame: self.hall_of_fame,
             stats: self.stats,
             final_population: self.population,
+        }
+    }
+
+    fn reset(&mut self) {
+        self.population = Vec::n_from_function(self.algorithm.pop_size(), Cached::generate);
+    }
+
+    fn reset_or_step(&mut self, generation: usize) {
+        if self.reset_interval != 0
+        && generation != 0
+        && generation % self.reset_interval == 0 {
+            self.reset();
+        } else {
+            self.algorithm.step(&mut self.population);
         }
     }
 }

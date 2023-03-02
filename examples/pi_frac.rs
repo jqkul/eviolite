@@ -1,20 +1,29 @@
 use eviolite::{
-    alg::MuPlusLambda, hof::BestN, repro_rng::thread_rng, select::Tournament, stats::FitnessBasic,
-    Cached, Evolution, Solution,
+    Solution, Evolution,
+    alg::MuPlusLambda,
+    select::Tournament,
+    hof::BestN,
+    stats::FitnessBasic,
+    repro_rng::thread_rng
 };
 use rand::Rng;
 
 const TARGET: f64 = std::f64::consts::PI;
 
+const POPSIZE: usize = 1000;
+const RESET_INTERVAL: usize = 500;
+const NGENS: usize = 5000;
+
 fn main() {
-    let evo: Evolution<Fraction, _, _, FitnessBasic> = Evolution::new(
-        MuPlusLambda::new(1000, 1000, 0.5, 0.1, Tournament::new(10)),
+    let evo: Evolution<Fraction, _, _, FitnessBasic> = Evolution::with_resets(
+        MuPlusLambda::new(POPSIZE, POPSIZE, 0.5, 0.1, Tournament::new(10)),
         BestN::new(1),
+        RESET_INTERVAL
     );
 
-    let log = evo.run_for(5000);
+    let log = evo.run_for(NGENS);
 
-    let (best, _) = Cached::into_inner(log.hall_of_fame[0].clone());
+    let (best, _) = log.hall_of_fame[0].clone().into_inner();
 
     println!("{}/{} = {}", best.0, best.1, best.divide());
 }

@@ -118,8 +118,8 @@ where
 
     /// Consumes the `Cached`, returning a tuple of the solution it contained
     /// and an [`Option`] of the fitness value that could have been cached.
-    pub fn into_inner(mut this: Self) -> (T, Option<T::Fitness>) {
-        (this.inner, *this.fitness.get_mut())
+    pub fn into_inner(mut self) -> (T, Option<T::Fitness>) {
+        (self.inner, *self.fitness.get_mut())
     }
 }
 

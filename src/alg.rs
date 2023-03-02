@@ -46,7 +46,8 @@ pub trait Algorithm<T: Solution> {
 /// One of the simplest possible evolutionary algorithms.
 ///
 /// This is a good starting point, especially for single-objective optimization,
-/// but it is only recommended as a starting point.
+/// but it is only recommended as a starting point. You will generally get better
+/// results with any other pre-built algorithm in this module.
 ///
 /// The selection operator for this algorithm must implement the [`Stochastic`] trait
 /// to show that randomness is involved in its selection. The algorithm selects N

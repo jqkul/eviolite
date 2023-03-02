@@ -33,6 +33,7 @@ pub trait HallOfFame<T: Solution> {
 pub struct BestN<T: Solution> {
     max: usize,
     best: Vec<Cached<T>>,
+    got_new_best: bool,
 }
 
 impl<T: Solution> BestN<T> {
@@ -42,13 +43,8 @@ impl<T: Solution> BestN<T> {
         BestN {
             max,
             best: Vec::with_capacity(max),
+            got_new_best: false
         }
-    }
-
-    /// Get a reference to the stored best solutions, sorted by rank.
-    /// E.g. `all()[0]` is the #1 best solution.
-    pub fn all(&self) -> &[Cached<T>] {
-        &self.best
     }
 
     /// Get a reference to the solution with the highest fitness
@@ -58,6 +54,16 @@ impl<T: Solution> BestN<T> {
     pub fn best(&self) -> Option<&Cached<T>> {
         self.best.first()
     }
+
+    /// Get a reference to the best solution,
+    /// but only if it was found in the most recently recorded generation.
+    pub fn best_if_new(&self) -> Option<&Cached<T>> {
+        if self.got_new_best {
+            self.best()
+        } else {
+            None
+        }
+    }
 }
 
 impl<T> HallOfFame<T> for BestN<T>
@@ -66,6 +72,7 @@ where
     T::Fitness: Into<f64>,
 {
     fn record(&mut self, generation: &[Cached<T>]) {
+        self.got_new_best = false;
         for ind in generation {
             if let Some(idx) = self.find_index(ind) {
                 self.best.insert(idx, ind.clone());
@@ -112,9 +119,10 @@ where
     T: Solution<Fitness = F>,
     F: Into<f64>,
 {
-    fn find_index(&self, ind: &Cached<T>) -> Option<usize> {
+    fn find_index(&mut self, ind: &Cached<T>) -> Option<usize> {
         let fit = ind.evaluate().into();
         if self.best.is_empty() || fit > self.best[0].evaluate().into() {
+            self.got_new_best = true;
             return Some(0);
         }
 
