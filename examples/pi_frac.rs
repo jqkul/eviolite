@@ -1,12 +1,4 @@
-use eviolite::{
-    Solution, Evolution,
-    alg::MuPlusLambda,
-    select::Tournament,
-    hof::BestN,
-    stats::FitnessBasic,
-    repro_rng::thread_rng
-};
-use rand::Rng;
+use eviolite::prelude::*;
 
 const TARGET: f64 = std::f64::consts::PI;
 
@@ -15,9 +7,9 @@ const RESET_INTERVAL: usize = 500;
 const NGENS: usize = 5000;
 
 fn main() {
-    let evo: Evolution<Fraction, _, _, FitnessBasic> = Evolution::with_resets(
-        MuPlusLambda::new(POPSIZE, POPSIZE, 0.5, 0.1, Tournament::new(10)),
-        BestN::new(1),
+    let evo: Evolution<Fraction, _, _, stats::FitnessBasic> = Evolution::with_resets(
+        alg::MuPlusLambda::new(POPSIZE, POPSIZE, 0.5, 0.1, select::Tournament::new(10)),
+        hof::BestN::new(1),
         RESET_INTERVAL
     );
 

@@ -22,6 +22,7 @@
 pub mod alg;
 pub mod fitness;
 pub mod hof;
+pub mod prelude;
 pub mod repro_rng;
 pub mod select;
 pub mod stats;

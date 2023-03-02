@@ -1,12 +1,4 @@
-use eviolite::{
-    Solution, Evolution,
-    alg::MuPlusLambda,
-    select::Tournament,
-    crossover::one_point,
-    mutation::gaussian,
-    hof::BestN,
-    repro_rng::thread_rng
-};
+use eviolite::prelude::*;
 
 use ndarray::Array1;
 use ndarray_rand::RandomExt;
@@ -16,7 +8,7 @@ use std::f64::consts::FRAC_PI_2;
 lazy_static::lazy_static! {
     // create a static array of 100 points between 0 and π/2
     // we'll use these points to check how good our polynomials are at approximating sine
-    pub static ref TEST_POINTS: Array1<f64> = Array1::range(0., FRAC_PI_2, FRAC_PI_2 / 100.);
+    static ref TEST_POINTS: Array1<f64> = Array1::range(0., FRAC_PI_2, FRAC_PI_2 / 100.);
 }
 
 #[derive(Clone)]
@@ -40,11 +32,11 @@ impl Solution for Polynomial {
     }
 
     fn crossover(a: &mut Self, b: &mut Self) {
-        one_point(&mut a.0, &mut b.0);
+        crossover::one_point(&mut a.0, &mut b.0);
     }
 
     fn mutate(&mut self) {
-        gaussian(&mut self.0, 0.5, 0.1);
+        mutation::gaussian(&mut self.0, 0.5, 0.1);
     }
 }
 
@@ -60,7 +52,7 @@ impl Polynomial {
 fn main() {
     let evo: Evolution<Polynomial, _, _, ()> = Evolution::new(
         // using the (μ + λ) algorithm
-        MuPlusLambda::new(
+        alg::MuPlusLambda::new(
             // population size (μ)
             1000,
             // offspring size (λ)
@@ -70,11 +62,11 @@ fn main() {
             // mutation chance (mutpb)
             0.2,
             // selection operator
-            Tournament::new(10)
+            select::Tournament::new(10)
         ),
 
         // a hall of fame that will track the single best polynomial we've found
-        BestN::new(1)
+        hof::BestN::new(1)
     );
 
     
