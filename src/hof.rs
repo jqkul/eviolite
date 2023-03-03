@@ -231,6 +231,12 @@ impl<T: Solution> Iterator for IntoIter<T> {
     }
 }
 
+impl<T: Solution> ExactSizeIterator for IntoIter<T> {
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
