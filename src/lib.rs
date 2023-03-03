@@ -125,7 +125,7 @@ where
     /// Create a new [`Evolution`] that will completely reset and re-generate its population
     /// every `reset_interval` generations during the run.
     /// This can be used as a method to avoid getting stuck in a local optimum while still
-    /// tracking the best individuals across all runs.
+    /// tracking the best individuals across all resets.
     /// If you find yourself running your program over and over again hoping for a better result,
     /// consider using this feature to combine them all into one run.
     pub fn with_resets(algorithm: Alg, hall_of_fame: Hof, reset_interval: usize) -> Self {
@@ -138,7 +138,8 @@ where
         }
     }
 
-    /// Run the algorithm for `n_gens` generations. Consumes the `Evolution` instance.
+    /// Run the algorithm for `n_gens` generations.
+    /// Consumes the `Evolution` instance.
     ///
     /// Returns an instance of [`Log`] containing the hall of fame and collected statistics for the run.
     ///
@@ -148,9 +149,13 @@ where
     }
 
     /// Run the algorithm until the provided `predicate` closure returns `true`.
+    /// Consumes the `Evolution` instance.
+    /// 
+    /// The closure is passed a [`Generation`] instance referring to the most recent generation.
     /// 
     /// Returns an instance of [`Log`] containing the hall of fame and collected statistics for the run.
     ///  
+    /// [`Generation`]: ./struct.Generation.html
     /// [`Log`]: ./struct.Log.html
     pub fn run_until<F>(self, predicate: F) -> Log<T, Hof, Stat>
     where
@@ -163,10 +168,7 @@ where
     /// This can be used to hook into external logging, a progress bar, or anything else
     /// that you want to execute interleaved with the algorithm.
     ///
-    /// The closure is passed three arguments:
-    /// - the generation number (starting from 0)
-    /// - an immutable slice of that generation's population
-    /// - a reference to this run's `Log` instance
+    /// The closure is passed a [`Generation`] instance referring to the most recent generation.
     pub fn run_for_with<F>(mut self, n_gens: usize, mut callback: F) -> Log<T, Hof, Stat>
     where
         F: FnMut(Generation<T, Hof, Stat>),
@@ -196,6 +198,8 @@ where
     /// Run the algorithm until the provided `predicate` closure returns `true`,
     /// calling the provided `callback` closure for each generation.
     /// Works the same way as [`.run_until()`] and [`.run_for_with()`].
+    /// 
+    /// Both closures are passed a [`Generation`] instance referring to the most recent generation.
     ///
     /// [`.run_until()`]: ./struct.Evolution.html#method.run_until
     /// [`.run_for_with()`]: .struct.Evolution.html#method.run_for_with
