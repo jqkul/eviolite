@@ -43,7 +43,7 @@ impl<T: Solution> BestN<T> {
         BestN {
             max,
             best: Vec::with_capacity(max),
-            got_new_best: false
+            got_new_best: false,
         }
     }
 

@@ -10,7 +10,7 @@ fn main() {
     let evo: Evolution<Fraction, _, _, stats::FitnessBasic> = Evolution::with_resets(
         alg::MuPlusLambda::new(POPSIZE, POPSIZE, 0.5, 0.1, select::Tournament::new(10)),
         hof::BestN::new(1),
-        RESET_INTERVAL
+        RESET_INTERVAL,
     );
 
     let log = evo.run_for(NGENS);

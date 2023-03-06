@@ -29,7 +29,11 @@ impl Solution for Polynomial {
     fn generate() -> Self {
         // create a random array of four f64s between 0 and 1
         // these represent the coefficients a, b, c, d in a + bx + cx² + dx³
-        Polynomial(Array1::random_using(4, Uniform::new_inclusive(0.0, 1.0), &mut thread_rng()))
+        Polynomial(Array1::random_using(
+            4,
+            Uniform::new_inclusive(0.0, 1.0),
+            &mut thread_rng(),
+        ))
     }
 
     fn evaluate(&self) -> Self::Fitness {
@@ -62,14 +66,12 @@ fn main() {
             // mutation chance (mutpb)
             0.2,
             // selection operator
-            select::Tournament::new(10)
+            select::Tournament::new(10),
         ),
-
         // a hall of fame that will track the single best polynomial we've found
         hof::BestN::new(1),
-
         // completely reset the algorithm every 25000 generations
-        25000
+        25000,
     );
 
     let start = std::time::Instant::now();

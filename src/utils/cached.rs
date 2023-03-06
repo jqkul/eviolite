@@ -40,13 +40,43 @@ where
 
     fn crossover(a: &mut Self, b: &mut Self) {
         T::crossover(&mut a.inner, &mut b.inner);
-        Cached::invalidate(a);
-        Cached::invalidate(b);
+        a.clear_cache();
+        b.clear_cache();
     }
 
     fn mutate(&mut self) {
         self.inner.mutate();
-        Cached::invalidate(self);
+        self.clear_cache();
+    }
+}
+
+impl<T> Cached<T>
+where
+    T: Solution,
+{
+    /// Create a new wrapper around an existing solution.
+    pub fn new(individual: T) -> Self {
+        Cached {
+            inner: individual,
+            fitness: UnsafeCell::new(None),
+        }
+    }
+
+    /// Consumes the `Cached`, returning a tuple of the solution it contained
+    /// and an [`Option`] of the fitness value that could have been cached.
+    pub fn into_inner(mut self) -> (T, Option<T::Fitness>) {
+        (self.inner, *self.fitness.get_mut())
+    }
+
+    /// Delete any cached fitness value.
+    /// Returns the fitness value that was cached, if it existed.
+    ///
+    /// **Be careful with this method**;
+    /// you should not generally need to use it.
+    /// Using it incorrectly can cause evaluations to be repeated
+    /// unnecessarily, leading to heavy slowdowns.
+    pub fn clear_cache(&mut self) -> Option<T::Fitness> {
+        std::mem::replace(self.fitness.get_mut(), None)
     }
 }
 
@@ -89,6 +119,24 @@ where
     }
 }
 
+impl<T> PartialOrd for Cached<T>
+where
+    T: Solution + PartialOrd,
+{
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.inner.partial_cmp(&other.inner)
+    }
+}
+
+impl<T> PartialOrd<T> for Cached<T>
+where
+    T: Solution + PartialOrd,
+{
+    fn partial_cmp(&self, other: &T) -> Option<std::cmp::Ordering> {
+        self.inner.partial_cmp(other)
+    }
+}
+
 impl<T> Debug for Cached<T>
 where
     T: Solution + Debug,
@@ -104,39 +152,11 @@ where
 
 unsafe impl<T: Solution> Sync for Cached<T> {}
 
-impl<T> Cached<T>
-where
-    T: Solution,
-{
-    /// Create a new wrapper around an existing solution.
-    pub fn new(individual: T) -> Self {
-        Cached {
-            inner: individual,
-            fitness: UnsafeCell::new(None),
-        }
-    }
-
-    /// Consumes the `Cached`, returning a tuple of the solution it contained
-    /// and an [`Option`] of the fitness value that could have been cached.
-    pub fn into_inner(mut self) -> (T, Option<T::Fitness>) {
-        (self.inner, *self.fitness.get_mut())
-    }
-}
-
 impl<T, const M: usize> Cached<T>
 where
     T: Solution<Fitness = MultiObjective<M>>,
 {
     pub(crate) fn fit(this: &Self, m: usize) -> f64 {
         unsafe { &*this.fitness.get() }.as_ref().unwrap()[m]
-    }
-}
-
-impl<T> Cached<T>
-where
-    T: Solution,
-{
-    fn invalidate(this: &mut Self) {
-        *this.fitness.get_mut() = None;
     }
 }

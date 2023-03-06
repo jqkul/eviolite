@@ -118,7 +118,7 @@ where
             algorithm,
             hall_of_fame,
             stats: Vec::new(),
-            reset_interval: 0
+            reset_interval: 0,
         }
     }
 
@@ -134,7 +134,7 @@ where
             algorithm,
             hall_of_fame,
             stats: Vec::new(),
-            reset_interval
+            reset_interval,
         }
     }
 
@@ -150,9 +150,9 @@ where
 
     /// Run the algorithm until the provided `predicate` closure returns `true`.
     /// Consumes the `Evolution` instance.
-    /// 
+    ///
     /// The closure is passed a [`Generation`] instance referring to the most recent generation.
-    /// 
+    ///
     /// Returns an instance of [`Log`] containing the hall of fame and collected statistics for the run.
     ///  
     /// [`Generation`]: ./struct.Generation.html
@@ -198,7 +198,7 @@ where
     /// Run the algorithm until the provided `predicate` closure returns `true`,
     /// calling the provided `callback` closure for each generation.
     /// Works the same way as [`.run_until()`] and [`.run_for_with()`].
-    /// 
+    ///
     /// Both closures are passed a [`Generation`] instance referring to the most recent generation.
     ///
     /// [`.run_until()`]: ./struct.Evolution.html#method.run_until
@@ -250,9 +250,7 @@ where
     }
 
     fn reset_or_step(&mut self, generation: usize) {
-        if self.reset_interval != 0
-        && generation != 0
-        && generation % self.reset_interval == 0 {
+        if self.reset_interval != 0 && generation != 0 && generation % self.reset_interval == 0 {
             self.reset();
         } else {
             self.algorithm.step(&mut self.population);

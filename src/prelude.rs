@@ -1,25 +1,14 @@
 //! Convenience re-export of commonly used items
 
 pub use crate::{
-    Solution,
-    Evolution,
-    Cached,
-    alg,
-    fitness,
+    alg, fitness,
     fitness::MultiObjective,
     hof,
-    repro_rng::{
-        thread_rng,
-        random
-    },
-    select,
-    stats,
+    repro_rng::{random, thread_rng},
+    select, stats, Cached, Evolution, Solution,
 };
 
 #[cfg(feature = "ndarray")]
-pub use crate::{
-    crossover,
-    mutation
-};
+pub use crate::{crossover, mutation};
 
 pub use rand::Rng;
